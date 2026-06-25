@@ -12,6 +12,7 @@ Each episode tackles one concept end-to-end: why it matters, how it works under 
 |---------|-------|---------|------|
 | 1 | What Is an AI Agent? | The agent loop, autonomy vs. automation | — |
 | 2 | Build Your First Agent from Scratch | ReAct loop · Tool use · No frameworks | [`Episode2/TinyAgent.py`](Episode2/TinyAgent.py) |
+| 3 | Real Tools — Web, Files, GitHub & Calculator | Production tool use · Guardrails · Five real tools | [`Episode3/agent_with_tools.py`](Episode3/agent_with_tools.py) |
 | *(more coming)* | | | |
 
 ---
@@ -23,9 +24,14 @@ Every episode folder is **self-contained** — it has its own code, its own READ
 ```
 AgenticAISeries/
 ├── Episode2/
-│   ├── TinyAgent.py   ← the runnable code for ep 2
-│   └── README.md      ← episode-specific walkthrough
-└── README.md          ← you are here
+│   ├── TinyAgent.py          ← the runnable code for ep 2
+│   └── README.md             ← episode-specific walkthrough
+├── Episode3/
+│   ├── agent_with_tools.py   ← the runnable code for ep 3
+│   ├── requirements.txt      ← pip dependencies
+│   ├── .env.example          ← API key template (copy → .env, fill in real keys)
+│   └── README.md             ← full component walkthrough
+└── README.md                 ← you are here
 ```
 
 ---
@@ -58,9 +64,10 @@ export ANTHROPIC_API_KEY=sk-ant-...   # macOS / Linux
 # $env:ANTHROPIC_API_KEY="sk-ant-…"  # Windows PowerShell
 
 # 4. Go to an episode and follow its README
-cd Episode2
+cd Episode3
 pip install -r requirements.txt
-python TinyAgent.py
+cp .env.example .env   # fill in your real keys
+python agent_with_tools.py
 ```
 
 ---
@@ -81,6 +88,32 @@ You will see:
 
 → **Code:** [`Episode2/TinyAgent.py`](Episode2/TinyAgent.py)
 
+### Episode 3 — Real Tools: Web, Files, GitHub & Calculator
+
+**The core insight:** toy string-manipulation tools won't prepare you for production. This episode wires five real tools to the same ReAct loop from Episode 2 and shows you every hard problem that appears — guardrails, sandboxing, error recovery, and safe expression evaluation.
+
+The five tools:
+
+| Tool | What it does | Key dependency |
+| ---- | ------------ | -------------- |
+| `web_search` | Live web search via SerpAPI | `SERPAPI_KEY` |
+| `read_file` | Reads files inside a sandboxed workspace | — |
+| `write_file` | Writes files (path-traversal protected) | — |
+| `github_api` | Fetches repo info / issues from GitHub API | `GITHUB_TOKEN` |
+| `calculator` | Evaluates math via safe AST parsing (no `eval`) | — |
+
+You will see:
+
+- How to write a JSON tool schema the model can parse (name, description, `input_schema`, required)
+- How the `run_tool` dispatcher maps model requests to Python functions
+- Guardrails in practice: `MAX_STEPS=10`, `MAX_TOKENS_PER_TURN=2048`, file-size cap, search result cap
+- Why `eval()` is dangerous and how AST-based math parsing eliminates that risk
+- Path-traversal protection: confining file access to `AGENT_WORKSPACE` using `os.path.abspath`
+- Error recovery: the agent reads tool errors, adjusts its plan, and retries
+
+→ **Code:** [`Episode3/agent_with_tools.py`](Episode3/agent_with_tools.py)  
+→ **Setup:** copy `.env.example` → `.env` and fill in the three API keys listed there
+
 ---
 
 ## Key Concepts Across the Series
@@ -91,6 +124,11 @@ You will see:
 | **Tool use** | Ep 2 | The model describes *what* to run; your code actually runs it. |
 | **Max-steps guard** | Ep 2 | A loop cap that prevents infinite execution — a basic but critical safety primitive. |
 | **Tool schema** | Ep 2 | JSON description of a tool's name, purpose, and inputs — the model's "manual" for your code. |
+| **Real tool integration** | Ep 3 | Connecting HTTP APIs, file I/O, and computation to the agent loop. |
+| **Guardrails** | Ep 3 | Token limits, step caps, file-size caps — safety primitives for production agents. |
+| **Safe eval** | Ep 3 | AST-based math parsing instead of `eval()` — eliminates arbitrary code execution risk. |
+| **Sandboxing** | Ep 3 | Path-traversal protection via `os.path.abspath` to confine file access. |
+| **Error recovery** | Ep 3 | The agent reads tool error messages and self-corrects — no special retry logic needed. |
 
 ---
 
@@ -100,6 +138,9 @@ You will see:
 - Anthropic (2024) — [Building Effective Agents](https://www.anthropic.com/research/building-effective-agents) (Schluntz & Zhang)
 - [Anthropic Tool Use Documentation](https://docs.anthropic.com/en/docs/build-with-claude/tool-use)
 - [Anthropic Python SDK](https://github.com/anthropics/anthropic-sdk-python)
+- [SerpAPI Documentation](https://serpapi.com/search-api)
+- [GitHub REST API](https://docs.github.com/en/rest)
+- [Python `ast` module — safe expression parsing](https://docs.python.org/3/library/ast.html)
 
 ---
 
