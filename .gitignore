@@ -3,3 +3,6 @@ renders/
 __pycache__/
 *.pyc
 media/
+.env
+brand.py
+viz_kit.py
