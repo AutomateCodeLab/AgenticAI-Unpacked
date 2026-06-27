@@ -27,14 +27,70 @@ import json
 import os
 import ast
 import operator
+import shutil
+import sys
 from datetime import date
 
 import requests
 from dotenv import load_dotenv
 from anthropic import Anthropic
 
-load_dotenv()
+_HERE = os.path.dirname(os.path.abspath(__file__))
+_ENV_PATH = os.path.join(_HERE, ".env")
+_ENV_EXAMPLE_PATH = os.path.join(_HERE, ".env.example")
+
+# ANTHROPIC_API_KEY is required to start; the others degrade gracefully per tool
+_REQUIRED_KEYS = {"ANTHROPIC_API_KEY"}
+_OPTIONAL_KEYS = {"SERPAPI_KEY", "GITHUB_TOKEN"}
+
+
+def _bootstrap_env() -> None:
+    if not os.path.exists(_ENV_PATH):
+        if not os.path.exists(_ENV_EXAMPLE_PATH):
+            print("ERROR: No .env or .env.example found in Episode3/. Cannot start.")
+            sys.exit(1)
+        shutil.copy(_ENV_EXAMPLE_PATH, _ENV_PATH)
+        print(f"[setup] Created .env from .env.example — fill in your keys at:\n        {_ENV_PATH}\n")
+
+    load_dotenv(_ENV_PATH)
+
+    # Read placeholder values from .env.example so we can detect unfilled entries
+    placeholders: dict[str, str] = {}
+    if os.path.exists(_ENV_EXAMPLE_PATH):
+        with open(_ENV_EXAMPLE_PATH) as f:
+            for line in f:
+                line = line.strip()
+                if line and not line.startswith("#") and "=" in line:
+                    key, _, val = line.partition("=")
+                    placeholders[key.strip()] = val.strip()
+
+    def _is_unset(key: str) -> bool:
+        val = os.environ.get(key, "").strip()
+        return not val or val == placeholders.get(key, "")
+
+    missing_required = [k for k in _REQUIRED_KEYS if _is_unset(k)]
+    missing_optional = [k for k in _OPTIONAL_KEYS if _is_unset(k)]
+
+    if missing_optional:
+        print("[setup] Optional keys not set — some tools will be unavailable:")
+        for k in missing_optional:
+            print(f"         {k}  →  add to {_ENV_PATH}")
+        print()
+
+    if missing_required:
+        print("ERROR: Required key(s) are missing or still set to placeholder values:")
+        for k in missing_required:
+            print(f"         {k}  →  set in {_ENV_PATH}")
+        print()
+        sys.exit(1)
+
+
+_bootstrap_env()
 client = Anthropic()
+
+
+def _warn_missing_key(key: str) -> None:
+    print(f"\n[config] {key} is not set — add it to {_ENV_PATH} and re-run to enable this tool.\n")
 MODEL = "claude-sonnet-4-6"
 
 # Safety: where agents can write files
@@ -68,7 +124,8 @@ def web_search(query: str, max_results: int = 3) -> list:
     try:
         api_key = os.environ.get("SERPAPI_KEY")
         if not api_key:
-            return [{"error": "SERPAPI_KEY not set in environment"}]
+            _warn_missing_key("SERPAPI_KEY")
+            return [{"error": "SERPAPI_KEY not set — web_search unavailable"}]
         
         url = "https://serpapi.com/search"
         params = {
@@ -163,7 +220,8 @@ def github_api(endpoint: str, method: str = "GET", body: dict = None) -> dict:
     try:
         token = os.environ.get("GITHUB_TOKEN")
         if not token:
-            return {"error": "GITHUB_TOKEN not set in environment"}
+            _warn_missing_key("GITHUB_TOKEN")
+            return {"error": "GITHUB_TOKEN not set — github_api unavailable"}
         
         url = f"https://api.github.com{endpoint}"
         headers = {
