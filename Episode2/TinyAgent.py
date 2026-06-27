@@ -30,10 +30,10 @@ Run it:
         source .venv/bin/activate
 
     # Windows (Command Prompt) — activate:
-        .venv\Scripts\activate.bat
+        .venv\\Scripts\\activate.bat
 
     # Windows (PowerShell) — activate:
-        .venv\Scripts\Activate.ps1
+        .venv\\Scripts\\Activate.ps1
 
     # 2. Install the dependency
     pip install anthropic
@@ -61,9 +61,24 @@ References (full list in the Episode 2 notes):
 import ast
 import json
 import operator
+import os
+import sys
 from datetime import date
 
 from anthropic import Anthropic
+
+api_key = os.environ.get("ANTHROPIC_API_KEY")
+if not api_key:
+    print(
+        "\n❌  ANTHROPIC_API_KEY is not set.\n"
+        "\nSet it before running:\n"
+        "\n    macOS / Linux:          export ANTHROPIC_API_KEY=sk-ant-..."
+        "\n    Windows (cmd):          set ANTHROPIC_API_KEY=sk-ant-..."
+        '\n    Windows (PowerShell):   $env:ANTHROPIC_API_KEY="sk-ant-..."\n'
+        "\nGet a key at https://console.anthropic.com → API Keys, then rerun:\n"
+        "\n    python TinyAgent.py\n"
+    )
+    sys.exit(1)
 
 client = Anthropic()            # reads ANTHROPIC_API_KEY from the environment
 MODEL = "claude-sonnet-4-6"     # fast + inexpensive — ideal for a tutorial
