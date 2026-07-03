@@ -13,6 +13,8 @@ Each episode tackles one concept end-to-end: why it matters, how it works under 
 | 1 | What Is an AI Agent? | The agent loop, autonomy vs. automation | — |
 | 2 | Build Your First Agent from Scratch | ReAct loop · Tool use · No frameworks | [`Episode2/TinyAgent.py`](Episode2/TinyAgent.py) |
 | 3 | Real Tools — Web, Files, GitHub & Calculator | Production tool use · Guardrails · Five real tools | [`Episode3/agent_with_tools.py`](Episode3/agent_with_tools.py) |
+| 4 | Multi-Agent Team | Orchestrator-workers pattern · Agents as tools for agents · Streamlit UI | [`Episode4/multiagent.py`](Episode4/multiagent.py) |
+| 5 | Agent Memory | Short-term/long-term/semantic memory · Embeddings & retrieval (RAG) · React + FastAPI UI | [`Episode5/agent_with_memory.py`](Episode5/agent_with_memory.py) |
 | *(more coming)* | | | |
 
 ---
@@ -31,6 +33,19 @@ AgenticAISeries/
 │   ├── requirements.txt      ← pip dependencies
 │   ├── .env.example          ← API key template (copy → .env, fill in real keys)
 │   └── README.md             ← full component walkthrough
+├── Episode4/
+│   ├── multiagent.py         ← orchestrator + specialist agents (the core loop)
+│   ├── llm_provider.py       ← runs on either Anthropic or OpenAI
+│   ├── streamlit_app.py      ← live UI over the same agents
+│   ├── requirements.txt, .env.example
+│   └── README.md
+├── Episode5/
+│   ├── agent_with_memory.py  ← short-term/long-term/semantic memory agent
+│   ├── llm_provider.py, embeddings_provider.py
+│   ├── server.py             ← FastAPI + SSE backend for the React UI
+│   ├── frontend/             ← React (Vite) chat UI
+│   ├── requirements.txt, .env.example
+│   └── README.md
 └── README.md                 ← you are here
 ```
 
@@ -42,6 +57,7 @@ AgenticAISeries/
 - An **Anthropic API key** — get one free at [console.anthropic.com](https://console.anthropic.com)
   - Create a key → "API Keys" → "Create Key" (starts with `sk-ant-…`)
   - Add a small credit under "Billing" — running any script in this repo costs a fraction of a cent
+- **Episodes 4+ also run on OpenAI** as an alternative to Anthropic — either key works, see that episode's README for setup. Episode 5's React UI additionally needs **Node.js 18+**.
 
 ---
 
@@ -114,6 +130,55 @@ You will see:
 → **Code:** [`Episode3/agent_with_tools.py`](Episode3/agent_with_tools.py)  
 → **Setup:** copy `.env.example` → `.env` and fill in the three API keys listed there
 
+### Episode 4 — Multi-Agent Team
+
+**The core insight:** an agent can be a *tool* for another agent. A multi-agent system isn't a new mechanism — it's the same ReAct loop from Episode 2, nested: an orchestrator's "tools" are other agents, each running its own loop.
+
+The team (a trip-planning use case):
+
+| Agent | Role | Tools |
+| ----- | ---- | ----- |
+| Orchestrator | Plans + delegates to specialists | `call_researcher`, `call_analyst`, `call_writer`, `call_critic` |
+| Researcher | Finds attractions/neighborhoods | `web_search` |
+| Analyst | Computes the day-by-day budget | `calculator` |
+| Writer | Drafts the itinerary | — |
+| Critic | Reviews the draft before it ships | — |
+
+You will see:
+
+- The orchestrator-workers pattern — Anthropic's recommended structure for complex work
+- Why the writer→critic review is a fixed code pipeline, not a prompt instruction the orchestrator has to remember
+- Guardrails that compound in multi-agent: per-agent step caps, a global delegation depth limit
+- Running the same agent code on **either Anthropic or OpenAI** (`llm_provider.py`)
+- A Streamlit UI over the identical agent loop — same logic, terminal or browser
+
+→ **Code:** [`Episode4/multiagent.py`](Episode4/multiagent.py)  
+→ **UI:** from `Episode4/`, run `streamlit run streamlit_app.py`  
+→ **Setup:** copy `.env.example` → `.env`, set either `OPENAI_API_KEY` or `ANTHROPIC_API_KEY`
+
+### Episode 5 — Agent Memory
+
+**The core insight:** an LLM is stateless — a chat only "remembers" because the app re-sends the whole history every turn. Real memory means going further: persisting facts beyond a single conversation, and retrieving them by *meaning*, not exact words — the actual mechanism behind RAG.
+
+Three kinds of memory, one agent (a personal-assistant use case):
+
+| Kind | What it is | Where it lives |
+| ---- | ---------- | -------------- |
+| Short-term | The growing message list | In memory, for one session |
+| Long-term | Durable facts the agent chooses to save | A JSON file on disk |
+| Semantic | Facts retrieved by meaning via embeddings | Cosine similarity over vectors |
+
+You will see:
+
+- Why a single similarity threshold doesn't transfer between embedding models — it's calibrated per provider, not a universal constant
+- Self-healing retrieval: switching embeddings provider between runs re-embeds old vectors instead of crashing on a dimension mismatch
+- Proving cross-session memory live: teach it a fact, start a brand-new session, ask about it, watch it retrieve from disk
+- A React + FastAPI UI streaming the live agent trace over Server-Sent Events, with a memory panel you can watch update in real time
+
+→ **Code:** [`Episode5/agent_with_memory.py`](Episode5/agent_with_memory.py)  
+→ **UI:** from `Episode5/`, run `uvicorn server:app --reload --port 8000`, then in a second terminal `cd frontend && npm run dev`  
+→ **Setup:** copy `.env.example` → `.env`, set either `OPENAI_API_KEY` or `ANTHROPIC_API_KEY`
+
 ---
 
 ## Key Concepts Across the Series
@@ -129,6 +194,12 @@ You will see:
 | **Safe eval** | Ep 3 | AST-based math parsing instead of `eval()` — eliminates arbitrary code execution risk. |
 | **Sandboxing** | Ep 3 | Path-traversal protection via `os.path.abspath` to confine file access. |
 | **Error recovery** | Ep 3 | The agent reads tool error messages and self-corrects — no special retry logic needed. |
+| **Orchestrator-workers** | Ep 4 | A manager agent delegates to specialist agents, each its own loop — agents as tools for agents. |
+| **Dual LLM provider** | Ep 4 | The same agent code runs on either Anthropic or OpenAI, auto-detected from whichever key is set. |
+| **Compounding guardrails** | Ep 4 | Per-agent step caps and a delegation depth limit — cost and failure modes multiply with each added agent. |
+| **Short/long-term memory** | Ep 5 | The message list (per session) vs. facts persisted to disk (across sessions). |
+| **Semantic memory / RAG** | Ep 5 | Retrieving facts by meaning via embeddings + cosine similarity, not exact-word matching. |
+| **Self-healing retrieval** | Ep 5 | Switching embedding providers re-computes affected vectors instead of crashing on a dimension mismatch. |
 
 ---
 
@@ -136,6 +207,8 @@ You will see:
 
 - Yao et al. (2022) — [ReAct: Synergizing Reasoning and Acting in Language Models](https://arxiv.org/abs/2210.03629)
 - Anthropic (2024) — [Building Effective Agents](https://www.anthropic.com/research/building-effective-agents) (Schluntz & Zhang)
+- Anthropic (2024) — [How we built our multi-agent research system](https://www.anthropic.com/engineering/built-multi-agent-research-system)
+- Lewis et al. (2020) — [Retrieval-Augmented Generation for Knowledge-Intensive NLP Tasks](https://arxiv.org/abs/2005.11401)
 - [Anthropic Tool Use Documentation](https://docs.anthropic.com/en/docs/build-with-claude/tool-use)
 - [Anthropic Python SDK](https://github.com/anthropics/anthropic-sdk-python)
 - [SerpAPI Documentation](https://serpapi.com/search-api)

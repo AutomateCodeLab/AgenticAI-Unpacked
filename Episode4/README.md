@@ -87,7 +87,6 @@ browser; you're watching the identical logic, just rendered live.
 - **Live trace** — expandable per-agent panels showing each specialist's own 🧠/🔧/👀 loop, color-coded (blue = delegating/tool calls, gray = tool results, green = "finished" confirmations). Each specialist's result is shown exactly once — the orchestrator's own echo of it is suppressed instead of duplicating the panel above.
 - **Clean tool output** — `web_search` results render as readable numbered text (`1. Title — snippet`), not a raw Python `[{'title': ...}]` dict dump.
 - **Final itinerary** — a bordered card, a **🎈 balloons** flourish on completion, plus a **Download (.md)** button. The result persists across reruns (e.g. clicking Download itself), so it doesn't vanish.
-- **Branded dark theme** (`.streamlit/config.toml`) — mirrors the series' `brand.py` palette so the live demo looks like part of the show.
 
 **If you see `ModuleNotFoundError: No module named 'anthropic'`** when running
 `streamlit run streamlit_app.py`, check your shell prompt — if it shows both
@@ -173,14 +172,10 @@ Episode4/
 ├── multiagent.py       # orchestrator + 4 specialists + trace callback + CLI demo
 ├── llm_provider.py     # Anthropic/OpenAI adapter — picks provider from whichever key is set
 ├── streamlit_app.py    # live UI — imports multiagent.py, adds an on_event callback
-├── .streamlit/
-│   └── config.toml     # branded dark theme (mirrors root brand.py palette)
 ├── requirements.txt    # anthropic, openai, requests, python-dotenv, streamlit
 ├── .env.example        # key template (safe to commit)
 ├── .env                # your real keys (gitignored)
-├── .gitignore
-├── data/               # script, hub doc, animation requests (for the video)
-└── README.md
+└── .gitignore
 ```
 
 ## References

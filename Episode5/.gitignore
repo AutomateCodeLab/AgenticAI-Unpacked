@@ -5,3 +5,8 @@ __pycache__/
 frontend/node_modules/
 frontend/dist/
 .DS_Store
+
+# Video-production artifact — local only, not part of the runnable code.
+# ep05_scenes.py depends on the repo root's brand.py/viz_kit.py (gitignored
+# there too), so it can't run standalone from this repo anyway.
+ep05_scenes.py

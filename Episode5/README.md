@@ -163,7 +163,6 @@ Episode5/
 ├── server.py                  # FastAPI + SSE — thin wrapper, same agent logic as the CLI
 ├── requirements.txt            # anthropic, openai, fastapi, uvicorn, python-dotenv, numpy, requests
 ├── .env.example / .gitignore / README.md
-├── data/                          # script, hub doc, animation requests (for the video)
 └── frontend/
     ├── package.json, vite.config.js, index.html
     └── src/
