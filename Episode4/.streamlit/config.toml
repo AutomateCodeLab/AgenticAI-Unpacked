@@ -1,0 +1,9 @@
+# Streamlit theme — mirrors the series' brand.py palette (root of the repo)
+# so the live demo app looks like part of "Agentic AI, Unpacked" on screen.
+[theme]
+base = "dark"
+primaryColor = "#4F9DFF"
+backgroundColor = "#0B0E14"
+secondaryBackgroundColor = "#141925"
+textColor = "#E6EAF2"
+font = "sans serif"
