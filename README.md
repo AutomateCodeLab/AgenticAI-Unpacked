@@ -15,7 +15,9 @@ Each episode tackles one concept end-to-end: why it matters, how it works under 
 | 3 | Real Tools — Web, Files, GitHub & Calculator | Production tool use · Guardrails · Five real tools | [`Episode3/agent_with_tools.py`](Episode3/agent_with_tools.py) |
 | 4 | Multi-Agent Team | Orchestrator-workers pattern · Agents as tools for agents · Streamlit UI | [`Episode4/multiagent.py`](Episode4/multiagent.py) |
 | 5 | Agent Memory | Short-term/long-term/semantic memory · Embeddings & retrieval (RAG) · React + FastAPI UI | [`Episode5/agent_with_memory.py`](Episode5/agent_with_memory.py) |
-| *(more coming)* | | | |
+| 6 | Guardrails & Safety (Finale) | Human-in-the-loop approval · Prompt-injection defense · Hard limits · Kill switch · Least privilege · React + FastAPI UI | [`Episode6/safe_agent.py`](Episode6/safe_agent.py) |
+
+Episode 6 closes the six-episode foundation arc — loop → tools → team → memory → safety. More episodes are planned beyond it.
 
 ---
 
@@ -46,6 +48,13 @@ AgenticAISeries/
 │   ├── frontend/             ← React (Vite) chat UI
 │   ├── requirements.txt, .env.example
 │   └── README.md
+├── Episode6/
+│   ├── safe_agent.py         ← hardened agent: 6 guardrail layers + least privilege
+│   ├── llm_provider.py       ← runs on either Anthropic or OpenAI
+│   ├── server.py             ← FastAPI + SSE backend, blocking approval + kill-switch
+│   ├── frontend/             ← React (Vite) UI — live approvals, layer status, kill switch
+│   ├── requirements.txt, .env.example
+│   └── README.md
 └── README.md                 ← you are here
 ```
 
@@ -57,7 +66,7 @@ AgenticAISeries/
 - An **Anthropic API key** — get one free at [console.anthropic.com](https://console.anthropic.com)
   - Create a key → "API Keys" → "Create Key" (starts with `sk-ant-…`)
   - Add a small credit under "Billing" — running any script in this repo costs a fraction of a cent
-- **Episodes 4+ also run on OpenAI** as an alternative to Anthropic — either key works, see that episode's README for setup. Episode 5's React UI additionally needs **Node.js 18+**.
+- **Episodes 4+ also run on OpenAI** as an alternative to Anthropic — either key works, see that episode's README for setup. Episodes 5 and 6's React UIs additionally need **Node.js 18+**.
 
 ---
 
@@ -179,6 +188,33 @@ You will see:
 → **UI:** from `Episode5/`, run `uvicorn server:app --reload --port 8000`, then in a second terminal `cd frontend && npm run dev`  
 → **Setup:** copy `.env.example` → `.env`, set either `OPENAI_API_KEY` or `ANTHROPIC_API_KEY`
 
+### Episode 6 — Guardrails & Safety (the Finale)
+
+**The core insight:** an agent is risky exactly because it's both *capable* and *autonomous* — a chatbot is capable but not autonomous, a script is autonomous but not capable, an agent is both. Safety isn't one clever trick; it's defense in depth, so that one layer failing isn't game over.
+
+Six layers of defense, on a foundation of least privilege (a personal-admin-assistant use case):
+
+| # | Layer | What it does |
+| - | ----- | ------------ |
+| 1 | Human-in-the-loop approval | Risky tools (`write_file`, `send_email`) pause for a live Approve/Deny click |
+| 2 | Input/output validation | Sandboxed paths, size-bounded output, an email-recipient allowlist |
+| 3 | Prompt-injection defense | Tool output framed as untrusted data, never instructions — toggleable to demo the vulnerability |
+| 4 | Hard limits | Step count, token count, cost budget, rate limit |
+| 5 | Logging | Every tool call, approval, and halt, timestamped and queryable |
+| 6 | Kill switch | Checked every loop iteration *and* every second while an approval is pending |
+
+You will see:
+
+- A real, live prompt-injection attack — a file with a hidden instruction the agent either obeys (undefended) or reports as suspicious data (defended), one system-prompt toggle apart
+- Why an *approved* risky action can still be blocked by the very next layer (the allowlist), proving defense-in-depth instead of a single point of failure
+- A human approval that genuinely pauses a running agent's background thread server-side, waiting for a live click in the browser — not a one-way log stream
+- A kill switch that halts a run mid-flight, even mid-approval, without needing the agent's cooperation
+- A live UI status strip mirroring the six layers, lighting up each one the instant it actually fires
+
+→ **Code:** [`Episode6/safe_agent.py`](Episode6/safe_agent.py)  
+→ **UI:** from `Episode6/`, run `uvicorn server:app --reload --port 8000`, then in a second terminal `cd frontend && npm run dev`  
+→ **Setup:** copy `.env.example` → `.env`, set either `OPENAI_API_KEY` or `ANTHROPIC_API_KEY`
+
 ---
 
 ## Key Concepts Across the Series
@@ -200,6 +236,11 @@ You will see:
 | **Short/long-term memory** | Ep 5 | The message list (per session) vs. facts persisted to disk (across sessions). |
 | **Semantic memory / RAG** | Ep 5 | Retrieving facts by meaning via embeddings + cosine similarity, not exact-word matching. |
 | **Self-healing retrieval** | Ep 5 | Switching embedding providers re-computes affected vectors instead of crashing on a dimension mismatch. |
+| **Human-in-the-loop approval** | Ep 6 | Risky tool calls genuinely pause execution until a human approves or denies, live. |
+| **Prompt-injection defense** | Ep 6 | Framing tool output as untrusted data (never instructions) so hidden commands in fetched content aren't obeyed. |
+| **Defense in depth** | Ep 6 | Six independent guardrail layers, so one layer failing isn't the whole story — an approved action can still be blocked by the next layer. |
+| **Least privilege** | Ep 6 | Give the agent the minimum access it needs — the guardrail that shrinks the *blast radius* when something slips through. |
+| **Kill switch** | Ep 6 | A stop condition checked every loop iteration (and every second during a pending approval) that halts a run without the agent's cooperation. |
 
 ---
 
@@ -209,6 +250,7 @@ You will see:
 - Anthropic (2024) — [Building Effective Agents](https://www.anthropic.com/research/building-effective-agents) (Schluntz & Zhang)
 - Anthropic (2024) — [How we built our multi-agent research system](https://www.anthropic.com/engineering/built-multi-agent-research-system)
 - Lewis et al. (2020) — [Retrieval-Augmented Generation for Knowledge-Intensive NLP Tasks](https://arxiv.org/abs/2005.11401)
+- [OWASP Top 10 for LLM Applications](https://owasp.org/www-project-top-10-for-large-language-model-applications/) — prompt injection, insecure output handling, excessive agency
 - [Anthropic Tool Use Documentation](https://docs.anthropic.com/en/docs/build-with-claude/tool-use)
 - [Anthropic Python SDK](https://github.com/anthropics/anthropic-sdk-python)
 - [SerpAPI Documentation](https://serpapi.com/search-api)

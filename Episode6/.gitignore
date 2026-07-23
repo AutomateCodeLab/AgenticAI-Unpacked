@@ -1,0 +1,14 @@
+.env
+.venv/
+__pycache__/
+*.pyc
+.DS_Store
+frontend/node_modules/
+frontend/dist/
+safe_agent_workspace/
+
+# Video-production artifact — local only, not part of the runnable code.
+# ep06_scenes.py depends on the repo root's brand.py/viz_kit.py (gitignored
+# there too), so it can't run standalone from this repo anyway.
+ep06_scenes.py
+data/
