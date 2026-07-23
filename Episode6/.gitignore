@@ -5,7 +5,13 @@ __pycache__/
 .DS_Store
 frontend/node_modules/
 frontend/dist/
-safe_agent_workspace/
+safe_agent_workspace/*
+# Seed file so a fresh clone / `python safe_agent.py Summarize notes.txt for
+# me` has something to read without running the plant-injection step first.
+# It's the exact demo payload safe_agent.py itself writes (DEMO_INJECTION_PAYLOAD) —
+# no secrets, just the tutorial's fake attacker@evil.com. Other runtime files
+# written into this folder during a demo run (status.txt, etc.) stay ignored.
+!safe_agent_workspace/notes.txt
 
 # Video-production artifact — local only, not part of the runnable code.
 # ep06_scenes.py depends on the repo root's brand.py/viz_kit.py (gitignored
